@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卡牌对战游戏</title>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  #browser-warning {
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    background: #ffeb3b; 
+    padding: 10px; 
+    text-align: center; 
+    z-index: 9999;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+  }
+
+  body {
+    font-family: 'Roboto', 'ZCOOL KuaiLe', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(150deg, #0f2027, #203a43, #2c5364);
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+  }
+  
+  .stars {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .star {
+    position: absolute;
+    background-color: white;
+    border-radius: 50%;
+    animation: twinkle var(--duration, 5s) infinite ease-in-out;
+  }
+  
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+  }
+  
+  .game-container {
+    width: 900px;
+    background: rgba(30, 35, 60, 0.95);
+    border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    display: none;
+    padding: 32px 36px 28px 36px;
+    position: relative;
+    z-index: 2;
+    min-height: 700px;
+    animation: fadeIn 0.8s;
+    border: 1px solid rgba(100, 150, 255, 0.3);
+  }
+  
+  .start-screen, .end-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: rgba(30, 35, 60, 0.95);
+    padding: 48px 44px 50px 44px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 3;
+    animation: fadeIn 0.7s;
+    border: 1px solid rgba(100, 150, 255, 0.3);
+    max-width: 600px;
+    width: 90%;
+  }
+  
+  .start-screen h1, .end-screen h1 {
+    font-family: 'ZCOOL KuaiLe', cursive;
+    font-size: 2.8rem;
+    color: #7ef;
+    margin-bottom: 14px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(100, 200, 255, 0.7);
+  }
+  
+  .start-screen p {
+    font-size: 1.3rem;
+    color: #ccd;
+    margin-bottom: 26px;
+    line-height: 1.6;
+  }
+  
+  .hand-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    padding: 15px;
+    background: rgba(20, 25, 40, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(100, 150, 255, 0.2);
+  }
+  
+  .player-hand, .opponent-hand {
+    display: flex;
+    gap: 14px;
+    min-height: 130px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .card {
+    border: 2.5px solid #4a5a9e;
+    padding: 7px;
+    width: 100px;
+    height: 140px;
+    cursor: pointer;
+    transition: transform 0.18s, box-shadow 0.18s;
+    position: relative;
+    overflow: visible;
+    background: linear-gradient(135deg, #2a3a6e 0%, #1a2a5e 100%);
+    box-shadow: 0 4px 20px rgba(0, 0, 40, 0.4);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'ZCOOL KuaiLe', 'Roboto', Arial, sans-serif;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    color: #eef;
+  }
+  
+  .card:hover {
+    transform: translateY(-12px) scale(1.08);
+    box-shadow: 0 12px 30px rgba(80, 120, 255, 0.35);
+    border-color: #aaf;
+    z-index: 2;
+  }
+  
+  .card-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #7df;
+    margin-bottom: 3px;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 0 #000;
+    text-align: center;
+    width: 100%;
+    padding: 2px 0;
+    background: rgba(0, 10, 40, 0.4);
+    border-radius: 4px;
+  }
+  
+  .card-details {
+    font-size: 14px;
+    color: #ccf;
+    text-align: center;
+    margin-bottom: 4px;
+    width: 100%;
+    padding: 0 5px;
+  }
+  
+  .card-cost {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #f55;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    z-index: 1;
+  }
+  
+  .card-attack {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    background: #5af;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    z-index: 1;
+  }
+  
+  .status-container {
+    display: flex;
+    justify-content: space-around;
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(20, 25, 40, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(100, 150, 255, 0.2);
+  }
+  
+  .health-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 20px;
+    color: #f76c6c;
+    font-weight: bold;
+    text-shadow: 0 1px 0 #000;
+    letter-spacing: 1px;
+  }
+  
+  .health-value {
+    font-size: 28px;
+    margin-top: 5px;
+    color: #ff9999;
+  }
+  
+  .action-points {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 20px;
+    color: #7df;
+    font-weight: bold;
+    text-shadow: 0 1px 0 #000;
+    letter-spacing: 1px;
+  }
+  
+  .ap-value {
+    font-size: 28px;
+    margin-top: 5px;
+    color: #aaf;
+  }
+  
+  .turn-indicator {
+    font-weight: bold;
+    color: #7ef;
+    font-size: 24px;
+    margin: 15px 0;
+    text-shadow: 0 0 10px rgba(100, 200, 255, 0.7);
+    letter-spacing: 1.5px;
+    padding: 10px 20px;
+    background: rgba(20, 30, 60, 0.7);
+    border-radius: 30px;
+    display: inline-block;
+    border: 1px solid rgba(100, 150, 255, 0.3);
+  }
+  
+  .deck-card {
+    border: 2px solid #4a6dcc;
+    padding: 15px 0 10px 0;
+    width: 90px;
+    height: 135px;
+    background: linear-gradient(150deg, #2a4a9e 0%, #1a3a8e 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    color: #ccf;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(0, 0, 40, 0.5);
+    font-family: 'ZCOOL KuaiLe', cursive, Arial, sans-serif;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .deck-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: rotate(45deg);
+    z-index: 0;
+  }
+  
+  .deck-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(80, 120, 255, 0.4);
+  }
+  
+  .deck-card span {
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaf;
+    margin-top: 5px;
+    text-shadow: 0 0 8px rgba(100, 150, 255, 0.7);
+    position: relative;
+    z-index: 1;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 20px 0;
+  }
+  
+  .game-button {
+    padding: 12px 30px;
+    cursor: pointer;
+    background: linear-gradient(120deg, #3a86ff, #6f42c1);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    font-family: 'ZCOOL KuaiLe', cursive;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  
+  .game-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, #6f42c1, #3a86ff);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+  }
+  
+  .game-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+  
+  .game-button:hover::before {
+    opacity: 1;
+  }
+  
+  .game-button:disabled {
+    background: #444;
+    color: #777;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .game-button:disabled:hover::before {
+    opacity: 0;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  @keyframes drawCardAnim {
+    0% { transform: scale(0.68) rotate(-10deg); opacity: 0.2; }
+    40% { transform: scale(1.15) rotate(6deg); }
+    80% { transform: scale(1.07) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  
+  @keyframes healPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  
+  @keyframes damageShake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-10px); }
+    100% { transform: translateX(0); }
+  }
+  
+  .heal-effect {
+    animation: healPulse 0.6s;
+    color: #7ef !important;
+  }
+  
+  .damage-effect {
+    animation: damageShake 0.5s;
+    color: #f76c6c !important;
+  }
+  
+  .draw-animation {
+    animation: drawCardAnim 0.7s cubic-bezier(.49,1.32,.37,1.01);
+    border-color: #ffb13b !important;
+    box-shadow: 0 0 20px 4px #ffcf3e;
+    z-index: 10;
+  }
+  
+  @media (max-width: 1000px) {
+    .game-container { 
+      width: 95vw; 
+      padding: 20px 15px;
+      min-height: auto;
+    }
+    
+    .card, .deck-card { 
+      width: 80px; 
+      height: 120px; 
+    }
+    
+    .card-name { font-size: 14px; }
+    .card-details { font-size: 12px; }
+    .card-cost, .card-attack { 
+      width: 25px; 
+      height: 25px; 
+      font-size: 14px; 
+    }
+    
+    .health-bar, .action-points { font-size: 16px; }
+    .health-value, .ap-value { font-size: 22px; }
+    
+    .start-screen h1, .end-screen h1 { font-size: 2.2rem; }
+    .start-screen p { font-size: 1.1rem; }
+    
+    .button-container {
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .game-button {
+      width: 100%;
+      max-width: 250px;
+    }
+  }
+  
+  .rules-container {
+    background: rgba(20, 25, 40, 0.8);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: left;
+    border: 1px solid rgba(100, 150, 255, 0.2);
+  }
+  
+  .rules-title {
+    color: #7ef;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  .rules-list {
+    padding-left: 20px;
+  }
+  
+  .rules-list li {
+    margin-bottom: 8px;
+    color: #ccd;
+  }
+  
+  #sfx-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+  }
+  
+  #sfx-toggle button {
+    padding: 8px 15px;
+    font-size: 14px;
+  }
+  
+  #end-turn-confirm {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+  }
+  
+  #end-turn-confirm > div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1e233c;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    width: 80%;
+    max-width: 400px;
+  }
+  
+  #end-turn-confirm h3 {
+    color: #7ef;
+    margin-bottom: 20px;
+  }
+  
+  #end-turn-confirm .button-container {
+    margin-top: 15px;
+  }
+  
+  .card-rare {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 10px;
+    color: #ffd700;
+    text-shadow: 0 0 3px #000;
+  }
+  
+  .common { color: #ccc; }
+  .uncommon { color: #7ef; }
+  .rare { color: #ffd700; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+
+<div id="browser-warning">
+  您的浏览器可能不兼容，请使用Chrome/Firefox/Edge最新版本
+</div>
+
+<div id="sfx-toggle">
+  <button id="sfx-button" class="game-button">音效:开启</button>
+</div>
+
+<div class="start-screen">
+  <h1>欢迎来到卡牌对战游戏</h1>
+  <p>策略与运气并存，击败你的对手吧！</p>
+  <button id="start-button" class="game-button">开始游戏</button>
+  
+  <div class="rules-container">
+    <h3 class="rules-title">游戏规则</h3>
+    <ul class="rules-list">
+      <li>玩家和对手初始各有<strong>50点生命值</strong></li>
+      <li>每回合开始时有<strong>10点行动值(AP)</strong>，每回合回复<strong>5点</strong></li>
+      <li>每回合开始时自动抽取<strong>5张牌</strong></li>
+      <li>使用卡牌需要消耗行动值</li>
+      <li>抽牌按钮消耗2点行动值（额外抽牌）</li>
+      <li>合理使用特殊效果卡牌扭转战局</li>
+      <li>先将对方生命值降为0则获胜</li>
+    </ul>
+  </div>
+</div>
+
+<div class="game-container">
+  <div id="opponent-turn" class="turn-indicator">对手回合</div>
+  
+  <div class="hand-container">
+    <div id="opponent-deck" class="deck-card">对手牌堆<br><span id="opponent-deck-count">138</span></div>
+    <div id="opponent-hand" class="opponent-hand"></div>
+  </div>
+  
+  <div class="status-container">
+    <div class="health-bar">
+      对手生命值
+      <div id="opponent-health" class="health-value">50</div>
+    </div>
+    
+    <div class="action-points">
+      对手行动值
+      <div id="opponent-action-points" class="ap-value">10</div>
+    </div>
+  </div>
+  
+  <div class="button-container">
+    <button id="end-turn-button" class="game-button">结束回合</button>
+    <button id="player-draw-button" class="game-button">抽牌 (2 AP)</button>
+  </div>
+  
+  <div class="status-container">
+    <div class="health-bar">
+      玩家生命值
+      <div id="player-health" class="health-value">50</div>
+    </div>
+    
+    <div class="action-points">
+      玩家行动值
+      <div id="player-action-points" class="ap-value">10</div>
+    </div>
+  </div>
+  
+  <div class="hand-container">
+    <div id="player-hand" class="player-hand"></div>
+    <div id="player-deck" class="deck-card">玩家牌堆<br><span id="player-deck-count">138</span></div>
+  </div>
+  
+  <div id="player-turn" class="turn-indicator">你的回合</div>
+</div>
+
+<div class="end-screen" style="display:none;">
+  <h1 id="end-message"></h1>
+  <button id="restart-button" class="game-button">重新开始</button>
+</div>
+
+<div id="end-turn-confirm" style="display:none;">
+  <div>
+    <h3>确认结束回合？</h3>
+    <p>您还有未使用的行动点，确定要结束回合吗？</p>
+    <div class="button-container">
+      <button id="confirm-end" class="game-button">确认</button>
+      <button id="cancel-end" class="game-button" style="background:linear-gradient(120deg, #ff6b6b, #ff9e7d)">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function createStars() {
+    const starsContainer = document.getElementById('stars');
+    const starCount = 150;
+    
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.classList.add('star');
+      
+      const size = Math.random() * 3;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      
+      star.style.setProperty('--duration', `${Math.random() * 5 + 3}s`);
+      
+      starsContainer.appendChild(star);
+    }
+  }
+  
+  createStars();
+
+  const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+  const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
+  const isSafari = navigator.userAgent.toLowerCase().includes('safari') && !isChrome;
+  const isEdge = navigator.userAgent.toLowerCase().includes('edg/');
+  const isIE = !!document.documentMode;
+  const isOldEdge = !!window.StyleMedia;
+
+  if ((!isFirefox && !isChrome && !isSafari && !isEdge) || isIE || isOldEdge) {
+    document.getElementById('browser-warning').style.display = 'block';
+  }
+
+  const sfx = {
+    draw: new Audio("https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3"),
+    play: new Audio("https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"),
+    heal: new Audio("https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3"),
+    damage: new Audio("https://assets.mixkit.co/sfx/preview/mixkit-explosion-impact-1684.mp3"),
+    win: new Audio("https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3"),
+    lose: new Audio("https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-lose-2027.mp3")
+  };
+  
+  let sfxEnabled = true;
+  
+  function playSFX(audio) {
+    if (!sfxEnabled || !audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(e => console.log("音频播放失败:", e));
+  }
+  
+  const playerHand = document.getElementById('player-hand');
+  const opponentHand = document.getElementById('opponent-hand');
+  const endTurnButton = document.getElementById('end-turn-button');
+  const playerHealthDisplay = document.getElementById('player-health');
+  const opponentHealthDisplay = document.getElementById('opponent-health');
+  const playerActionPointsDisplay = document.getElementById('player-action-points');
+  const opponentActionPointsDisplay = document.getElementById('opponent-action-points');
+  const playerDeckCountDisplay = document.getElementById('player-deck-count');
+  const opponentDeckCountDisplay = document.getElementById('opponent-deck-count');
+  const playerTurnIndicator = document.getElementById('player-turn');
+  const opponentTurnIndicator = document.getElementById('opponent-turn');
+  const playerDrawButton = document.getElementById('player-draw-button');
+  const startScreen = document.querySelector('.start-screen');
+  const gameContainer = document.querySelector('.game-container');
+  const endScreen = document.querySelector('.end-screen');
+  const endMessage = document.getElementById('end-message');
+  const startButton = document.getElementById('start-button');
+  const restartButton = document.getElementById('restart-button');
+  const playerDeckDiv = document.getElementById('player-deck');
+  const opponentDeckDiv = document.getElementById('opponent-deck');
+  const sfxButton = document.getElementById('sfx-button');
+  const endTurnConfirm = document.getElementById('end-turn-confirm');
+  const confirmEndButton = document.getElementById('confirm-end');
+  const cancelEndButton = document.getElementById('cancel-end');
+
+  let playerHealth, opponentHealth, currentPlayer;
+  let playerActionPoints, opponentActionPoints;
+  let playerDeck = [], opponentDeck = [];
+  let playerCards = [], opponentCards = [];
+  let playerBuff = { attackPlus: 0, immune: false, nextTurnHeal: 0, poison: 0 };
+  let opponentBuff = { attackPlus: 0, immune: false, nextTurnHeal: 0, poison: 0 };
+
+  function createCard(name, attack, cost, effect, rarity) {
+    return { name, attack, cost, effect, rarity };
+  }
+
+  function getBaseCards() {
+    const commonCards = [
+      createCard('火焰球', 5, 1, '', 'common'),
+      createCard('闪电箭', 7, 2, '', 'common'),
+      createCard('冰霜之刃', 4, 2, '', 'common'),
+      createCard('火墙', 3, 1, '', 'common'),
+      createCard('治愈光束', -3, 1, '恢复3点血量', 'common')
+    ];
+    
+    const uncommonCards = [
+      createCard('雷霆一击', 10, 3, '', 'uncommon'),
+      createCard('能量药水', 0, 0, '恢复2点行动值', 'uncommon'),
+      createCard('神圣护盾', -2, 2, '下一回合免疫攻击', 'uncommon'),
+      createCard('毒雾弹', 5, 2, '造成3回合持续伤害(每回合2点)', 'uncommon'),
+      createCard('隐身符咒', 0, 2, '下一回合免疫攻击', 'uncommon'),
+      createCard('能量窃取', 0, 3, '偷取对方2点行动值', 'uncommon')
+    ];
+    
+    const rareCards = [
+      createCard('魔法镜像', 0, 3, '复制对手一张卡牌', 'rare'),
+      createCard('龙卷风', 5, 4, '清除对方所有卡牌', 'rare'),
+      createCard('地震波', 10, 3, '随机破坏对方两张卡牌', 'rare'),
+      createCard('治疗结界', -5, 3, '下回合恢复5点血量', 'rare'),
+      createCard('强化术', 0, 2, '提高下一次攻击2点攻击力', 'rare')
+    ];
+    
+    const baseCards = [];
+    for (let i = 0; i < 15; i++) baseCards.push(...commonCards);
+    for (let i = 0; i < 8; i++) baseCards.push(...uncommonCards);
+    for (let i = 0; i < 3; i++) baseCards.push(...rareCards);
+    
+    return baseCards;
+  }
+
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  function drawCards(deck, count) {
+    const drawnCards = deck.splice(0, count);
+    updateDeckCounts();
+    return drawnCards;
+  }
+
+  function updateDeckCounts() {
+    playerDeckCountDisplay.textContent = playerDeck.length;
+    opponentDeckCountDisplay.textContent = opponentDeck.length;
+  }
+
+  function renderCards(handElement, handArray, isPlayer) {
+    handElement.innerHTML = '';
+    handArray.forEach((card, index) => {
+      const cardDiv = document.createElement('div');
+      cardDiv.className = 'card';
+      
+      if (card.cost > (isPlayer ? playerActionPoints : opponentActionPoints)) {
+        cardDiv.style.opacity = 0.5;
+        cardDiv.style.filter = 'grayscale(0.8)';
+      } else {
+        cardDiv.style.opacity = 1;
+        cardDiv.style.filter = '';
+      }
+
+      const cardName = document.createElement('div');
+      cardName.className = 'card-name';
+      cardName.textContent = card.name;
+
+      const cardDetails = document.createElement('div');
+      cardDetails.className = 'card-details';
+      cardDetails.textContent = card.effect || '直接攻击';
+
+      const cardCost = document.createElement('div');
+      cardCost.className = 'card-cost';
+      cardCost.textContent = card.cost;
+      
+      const cardAttack = document.createElement('div');
+      cardAttack.className = 'card-attack';
+      cardAttack.textContent = card.attack > 0 ? card.attack : '♥' + Math.abs(card.attack);
+      
+      const cardRare = document.createElement('div');
+      cardRare.className = `card-rare ${card.rarity}`;
+      cardRare.textContent = card.rarity === 'common' ? '普通' : 
+                            card.rarity === 'uncommon' ? '稀有' : '史诗';
+
+      cardDiv.appendChild(cardName);
+      cardDiv.appendChild(cardDetails);
+      cardDiv.appendChild(cardCost);
+      cardDiv.appendChild(cardAttack);
+      cardDiv.appendChild(cardRare);
+
+      cardDiv.addEventListener('click', (ev) => {
+        if (isPlayer && currentPlayer === 'player') {
+            playCard(card, index, true);
+        }
+        ev.stopPropagation();
+      });
+
+      handElement.appendChild(cardDiv);
+    });
+  }
+
+  function applyPoisonBuff(buff, isPlayer) {
+    if (buff.poison && buff.poison > 0) {
+      if (isPlayer) {
+        playerHealth = Math.max(0, playerHealth - 2);
+        playerHealthDisplay.classList.add('damage-effect');
+        setTimeout(() => playerHealthDisplay.classList.remove('damage-effect'), 800);
+      } else {
+        opponentHealth = Math.max(0, opponentHealth - 2);
+        opponentHealthDisplay.classList.add('damage-effect');
+        setTimeout(() => opponentHealthDisplay.classList.remove('damage-effect'), 800);
+      }
+      buff.poison--;
+      playSFX(sfx.damage);
+    }
+  }
+
+  function playCard(card, index, isPlayer) {
+    if (isPlayer && playerActionPoints < card.cost) return;
+    if (!isPlayer && opponentActionPoints < card.cost) return;
+
+    if (isPlayer) playerActionPoints -= card.cost;
+    else opponentActionPoints -= card.cost;
+
+    const handEl = isPlayer ? playerHand : opponentHand;
+    const cardEl = handEl.children[index];
+    if (cardEl) {
+      cardEl.classList.add('animation');
+      cardEl.style.transform = 'scale(1.1)';
+      setTimeout(() => {
+        cardEl.classList.remove('animation');
+        cardEl.style.transform = '';
+      }, 400);
+    }
+    playSFX(sfx.play);
+
+    let selfBuff = isPlayer ? playerBuff : opponentBuff;
+    let targetBuff = isPlayer ? opponentBuff : playerBuff;
+    let selfCards = isPlayer ? playerCards : opponentCards;
+    let targetCards = isPlayer ? opponentCards : playerCards;
+
+    if (card.name === "治愈光束" || card.name === "治疗结界") {
+      playSFX(sfx.heal);
+      if (isPlayer) {
+        playerHealth = Math.min(50, playerHealth - card.attack);
+        playerHealthDisplay.classList.add('heal-effect');
+        setTimeout(() => playerHealthDisplay.classList.remove('heal-effect'), 600);
+      } else {
+        opponentHealth = Math.min(50, opponentHealth - card.attack);
+        opponentHealthDisplay.classList.add('heal-effect');
+        setTimeout(() => opponentHealthDisplay.classList.remove('heal-effect'), 600);
+      }
+      if (card.name === "治疗结界") selfBuff.nextTurnHeal += 5;
+    } else if (card.name === "能量药水") {
+      playSFX(sfx.heal);
+      if (isPlayer) {
+        playerActionPoints += 2;
+        playerActionPointsDisplay.classList.add('heal-effect');
+        setTimeout(() => playerActionPointsDisplay.classList.remove('heal-effect'), 600);
+      } else {
+        opponentActionPoints += 2;
+        opponentActionPointsDisplay.classList.add('heal-effect');
+        setTimeout(() => opponentActionPointsDisplay.classList.remove('heal-effect'), 600);
+      }
+    } else if (card.name === "神圣护盾" || card.name === "隐身符咒") {
+      playSFX(sfx.heal);
+      selfBuff.immune = true;
+      if (isPlayer) {
+        playerHand.classList.add('heal-effect');
+        setTimeout(() => playerHand.classList.remove('heal-effect'), 1000);
+      } else {
+        opponentHand.classList.add('heal-effect');
+        setTimeout(() => opponentHand.classList.remove('heal-effect'), 1000);
+      }
+    } else if (card.name === "毒雾弹") {
+      if (!targetBuff.immune) {
+        playSFX(sfx.damage);
+        targetBuff.poison = 3;
+        if (isPlayer) {
+          opponentHealthDisplay.classList.add('damage-effect');
+          setTimeout(() => opponentHealthDisplay.classList.remove('damage-effect'), 1000);
+        } else {
+          playerHealthDisplay.classList.add('damage-effect');
+          setTimeout(() => playerHealthDisplay.classList.remove('damage-effect'), 1000);
+        }
+      }
+    } else if (card.name === "魔法镜像") {
+      if (targetCards.length > 0 && selfCards.length < 10) {
+        const randIdx = Math.floor(Math.random() * targetCards.length);
+        selfCards.push({...targetCards[randIdx]});
+        playSFX(sfx.heal);
+      }
+    } else if (card.name === "龙卷风") {
+      targetCards.length = 0;
+      playSFX(sfx.damage);
+    } else if (card.name === "地震波") {
+      for (let i = 0; i < 2 && targetCards.length > 0; ++i) {
+        const randIdx = Math.floor(Math.random() * targetCards.length);
+        targetCards.splice(randIdx,1);
+      }
+      playSFX(sfx.damage);
+    } else if (card.name === "强化术") {
+      playSFX(sfx.heal);
+      selfBuff.attackPlus += 2;
+      if (isPlayer) {
+        playerHand.classList.add('heal-effect');
+        setTimeout(() => playerHand.classList.remove('heal-effect'), 1000);
+      } else {
+        opponentHand.classList.add('heal-effect');
+        setTimeout(() => opponentHand.classList.remove('heal-effect'), 1000);
+      }
+    } else if (card.name === "能量窃取") {
+      if (!targetBuff.immune) {
+        const stealAmount = Math.min(2, isPlayer ? opponentActionPoints : playerActionPoints);
+        if (stealAmount > 0) {
+          if (isPlayer) {
+            opponentActionPoints -= stealAmount;
+            playerActionPoints += stealAmount;
+          } else {
+            playerActionPoints -= stealAmount;
+            opponentActionPoints += stealAmount;
+          }
+          playSFX(sfx.play);
+        }
+      }
+    } else {
+      let attackVal = card.attack + selfBuff.attackPlus;
+      selfBuff.attackPlus = 0;
+      if (!targetBuff.immune && attackVal > 0) {
+        playSFX(sfx.damage);
+        if (isPlayer) {
+          opponentHealth = Math.max(0, opponentHealth - attackVal);
+          opponentHealthDisplay.classList.add('damage-effect');
+          setTimeout(() => opponentHealthDisplay.classList.remove('damage-effect'), 600);
+        } else {
+          playerHealth = Math.max(0, playerHealth - attackVal);
+          playerHealthDisplay.classList.add('damage-effect');
+          setTimeout(() => playerHealthDisplay.classList.remove('damage-effect'), 600);
+        }
+      }
+      targetBuff.immune = false;
+    }
+    
+    selfCards.splice(index, 1);
+
+    updateStatus();
+    updateButtons();
+    renderCards(playerHand, playerCards, true);
+    renderCards(opponentHand, opponentCards, false);
+    checkGameOver();
+  }
+
+  function updateStatus() {
+    playerHealthDisplay.textContent = playerHealth;
+    opponentHealthDisplay.textContent = opponentHealth;
+    playerActionPointsDisplay.textContent = playerActionPoints;
+    opponentActionPointsDisplay.textContent = opponentActionPoints;
+    updateDeckCounts();
+  }
+  
+  function updateButtons() {
+    playerDrawButton.disabled = 
+      playerActionPoints < 2 || 
+      playerCards.length >= 10 || 
+      playerDeck.length === 0;
+      
+    if (playerDeck.length === 0) {
+      playerDrawButton.textContent = "牌堆已空";
+    } else if (playerCards.length >= 10) {
+      playerDrawButton.textContent = "手牌已满";
+    } else {
+      playerDrawButton.textContent = "抽牌 (2 AP)";
+    }
+  }
+
+  function checkGameOver() {
+    if (playerHealth <= 0) {
+      playerHealth = 0;
+      playSFX(sfx.lose);
+      endGame("你输了！");
+      return true;
+    } else if (opponentHealth <= 0) {
+      opponentHealth = 0;
+      playSFX(sfx.win);
+      endGame("你赢了！");
+      return true;
+    }
+    return false;
+  }
+
+  function endGame(msg) {
+    gameContainer.style.display = 'none';
+    endScreen.style.display = 'flex';
+    endMessage.textContent = msg;
+  }
+
+  function playerTurnStart() {
+    currentPlayer = 'player';
+    
+    playerActionPoints += 5;
+    
+    const drawCount = Math.min(5, 10 - playerCards.length, playerDeck.length);
+    if (drawCount > 0) {
+      const newCards = drawCards(playerDeck, drawCount);
+      playerCards.push(...newCards);
+      for (let i = 0; i < newCards.length; i++) {
+        setTimeout(() => {
+          deckDrawAnimation(playerDeckDiv, 'player');
+        }, i * 300);
+      }
+    }
+    
+    playerTurnIndicator.style.display = 'block';
+    opponentTurnIndicator.style.display = 'none';
+    playerDrawButton.disabled = false;
+    endTurnButton.disabled = false;
+
+    if (playerBuff.nextTurnHeal > 0) {
+      playerHealth = Math.min(50, playerHealth + playerBuff.nextTurnHeal);
+      playerBuff.nextTurnHeal = 0;
+      playerHealthDisplay.classList.add('heal-effect');
+      setTimeout(() => playerHealthDisplay.classList.remove('heal-effect'), 600);
+      playSFX(sfx.heal);
+    }
+    applyPoisonBuff(playerBuff, true);
+    
+    updateStatus();
+    updateButtons();
+    renderCards(playerHand, playerCards, true);
+    renderCards(opponentHand, opponentCards, false);
+    checkGameOver();
+  }
+
+  function opponentTurnStart() {
+    currentPlayer = 'opponent';
+    
+    opponentActionPoints += 5;
+    
+    const drawCount = Math.min(5, 10 - opponentCards.length, opponentDeck.length);
+    if (drawCount > 0) {
+      const newCards = drawCards(opponentDeck, drawCount);
+      opponentCards.push(...newCards);
+      for (let i = 0; i < newCards.length; i++) {
+        setTimeout(() => {
+          deckDrawAnimation(opponentDeckDiv, 'opponent');
+        }, i * 300);
+      }
+    }
+    
+    playerTurnIndicator.style.display = 'none';
+    opponentTurnIndicator.style.display = 'block';
+    playerDrawButton.disabled = true;
+    endTurnButton.disabled = true;
+
+    if (opponentBuff.nextTurnHeal > 0) {
+      opponentHealth = Math.min(50, opponentHealth + opponentBuff.nextTurnHeal);
+      opponentBuff.nextTurnHeal = 0;
+      opponentHealthDisplay.classList.add('heal-effect');
+      setTimeout(() => opponentHealthDisplay.classList.remove('heal-effect'), 600);
+      playSFX(sfx.heal);
+    }
+    applyPoisonBuff(opponentBuff, false);
+    
+    updateStatus();
+    renderCards(playerHand, playerCards, true);
+    renderCards(opponentHand, opponentCards, false);
+
+    setTimeout(opponentAI, 1050);
+  }
+
+  function opponentAI() {
+    if (checkGameOver()) return;
+    
+    const priority = (card) => {
+      if (opponentHealth <= 25 && card.attack > 0) return card.attack * 2;
+      if (playerHealth <= 25 && card.attack < 0) return 100;
+      if (card.name === "龙卷风" && playerCards.length >= 3) return 120;
+      if (card.name === "地震波" && playerCards.length >= 2) return 110;
+      if (card.name === "毒雾弹" && playerHealth > 25) return 95;
+      if (card.name === "魔法镜像" && playerCards.length > 0) return 90;
+      if (card.name === "能量窃取" && playerActionPoints > 2) return 105;
+      if (card.attack > 0) return card.attack;
+      return 50;
+    };
+    
+    let playableCards = opponentCards
+      .map((c, i) => ({card: c, idx: i}))
+      .filter(({card}) => card.cost <= opponentActionPoints);
+      
+    if (playableCards.length > 0) {
+      playableCards.sort((a, b) => priority(b.card) - priority(a.card));
+      playCard(playableCards[0].card, playableCards[0].idx, false);
+      setTimeout(opponentAI, 700);
+      return;
+    }
+    
+    if (opponentActionPoints >= 2 && opponentDeck.length > 0 && opponentCards.length < 10) {
+      let newCards = drawCards(opponentDeck, 1);
+      if(newCards.length > 0) {
+        opponentCards.push(...newCards);
+        opponentActionPoints -= 2;
+        updateStatus();
+        renderCards(opponentHand, opponentCards, false);
+        deckDrawAnimation(opponentDeckDiv, 'opponent');
+        setTimeout(opponentAI, 700);
+        return;
+      }
+    }
+    setTimeout(playerTurnStart, 1300);
+  }
+
+  function deckDrawAnimation(deckDiv, who) {
+    if (!deckDiv) return;
+    deckDiv.classList.add('draw-animation');
+    playSFX(sfx.draw);
+    setTimeout(() => {
+      deckDiv.classList.remove('draw-animation');
+      if (who === 'player' && playerHand.lastChild) {
+        playerHand.lastChild.classList.add('draw-animation');
+        setTimeout(() => playerHand.lastChild.classList.remove('draw-animation'), 700);
+      }
+      if (who === 'opponent' && opponentHand.lastChild) {
+        opponentHand.lastChild.classList.add('draw-animation');
+        setTimeout(() => opponentHand.lastChild.classList.remove('draw-animation'), 700);
+      }
+    }, 600);
+  }
+
+  function playerDraw() {
+    if (playerActionPoints < 2 || playerDeck.length === 0 || playerCards.length >= 10) {
+      if (playerDeck.length === 0) {
+        playerDrawButton.textContent = "牌堆已空";
+        setTimeout(() => updateButtons(), 1200);
+      }
+      if (playerCards.length >= 10) {
+        playerDrawButton.textContent = "手牌已满";
+        setTimeout(() => updateButtons(), 1200);
+      }
+      return;
+    }
+    let newCards = drawCards(playerDeck, 1);
+    if(newCards.length > 0) {
+      playerCards.push(...newCards);
+      playerActionPoints -= 2;
+      updateStatus();
+      updateButtons();
+      renderCards(playerHand, playerCards, true);
+      deckDrawAnimation(playerDeckDiv, 'player');
+    }
+  }
+
+  function endPlayerTurn() {
+    opponentTurnStart();
+  }
+
+  function startGame() {
+    playerHealth = 50;
+    opponentHealth = 50;
+    playerActionPoints = 10;
+    opponentActionPoints = 10;
+    currentPlayer = 'player';
+    playerBuff = { attackPlus: 0, immune: false, nextTurnHeal: 0, poison: 0 };
+    opponentBuff = { attackPlus: 0, immune: false, nextTurnHeal: 0, poison: 0 };
+
+    let baseCards = getBaseCards();
+    playerDeck = shuffle([...baseCards]);
+    opponentDeck = shuffle([...baseCards]);
+    playerCards = [];
+    opponentCards = [];
+
+    startScreen.style.display = 'none';
+    gameContainer.style.display = 'block';
+    endScreen.style.display = 'none';
+    updateDeckCounts();
+    updateButtons();
+    playerTurnStart();
+  }
+
+  playerDeckDiv.addEventListener('click', () => {
+    if (currentPlayer === 'player' && !playerDrawButton.disabled) playerDraw();
+  });
+
+  startButton.onclick = startGame;
+  restartButton.onclick = startGame;
+  
+  endTurnButton.onclick = function() {
+    if (playerActionPoints > 0 && playerCards.some(card => card.cost <= playerActionPoints)) {
+      endTurnConfirm.style.display = 'block';
+    } else {
+      endPlayerTurn();
+    }
+  };
+  
+  confirmEndButton.onclick = function() {
+    endTurnConfirm.style.display = 'none';
+    endPlayerTurn();
+  };
+  
+  cancelEndButton.onclick = function() {
+    endTurnConfirm.style.display = 'none';
+  };
+  
+  playerDrawButton.onclick = playerDraw;
+  
+  sfxButton.onclick = function() {
+    sfxEnabled = !sfxEnabled;
+    this.textContent = `音效:${sfxEnabled ? '开启' : '关闭'}`;
+    this.style.background = sfxEnabled 
+      ? 'linear-gradient(120deg, #3a86ff, #6f42c1)'
+      : 'linear-gradient(120deg, #6c757d, #495057)';
+  };
+
+  startScreen.style.display = 'flex';
+  gameContainer.style.display = 'none';
+  endScreen.style.display = 'none';
+  opponentTurnIndicator.style.display = 'none';
+});
+</script>
+</body>
+</html>
